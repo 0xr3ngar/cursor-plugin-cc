@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Use the Cursor Agent CLI from Claude Code to review code or delegate tasks.",
-    "version": "0.1.2"
+    "version": "0.1.3"
   },
   "plugins": [
     {
       "name": "cursor",
       "description": "Use the Cursor Agent CLI from Claude Code to review code or delegate tasks.",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "source": "./plugins/cursor"
     }
   ]
