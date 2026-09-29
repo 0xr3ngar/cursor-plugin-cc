@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 
-import { checkModel, modelMatches, parseModels } from "../plugins/cursor/scripts/lib/models.ts";
+import { modelMatches, parseModels } from "../plugins/cursor/scripts/lib/models.ts";
 
 const fixture = fs.readFileSync(path.join(import.meta.dirname, "fixtures", "models.txt"), "utf8");
 
@@ -37,18 +37,4 @@ test("modelMatches needs every word in the id or label", () => {
   assert.equal(modelMatches(model, ["codex", "fast"]), true);
   assert.equal(modelMatches(model, ["CODEX"]), true);
   assert.equal(modelMatches(model, ["codex", "opus"]), false);
-});
-
-test("checkModel accepts known ids and bracket overrides", () => {
-  const models = parseModels(fixture);
-  assert.equal(checkModel(models, "composer-2.5"), null);
-  assert.equal(checkModel(models, "claude-opus-5-thinking-high[effort=high]"), null);
-});
-
-test("checkModel suggests close matches for unknown ids", () => {
-  const models = parseModels(fixture);
-  const message = checkModel(models, "codex-high") ?? "";
-  assert.match(message, /no model named "codex-high"/);
-  assert.match(message, /gpt-5\.3-codex-high, gpt-5\.3-codex-high-fast/);
-  assert.match(message, /\/cursor:models/);
 });

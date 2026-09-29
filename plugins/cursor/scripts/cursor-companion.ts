@@ -17,7 +17,7 @@ import {
   loadJob,
   startJob,
 } from "./lib/jobs.ts";
-import { checkModel, fetchModels, modelMatches } from "./lib/models.ts";
+import { fetchModels, modelMatches } from "./lib/models.ts";
 
 const PROMPTS_DIR = path.join(import.meta.dirname, "..", "prompts");
 
@@ -32,17 +32,6 @@ function fillTemplate(name: string, values: Record<string, string>): string {
 
 function currentStateDir(): string {
   return getStateDir(findRepoRoot(process.cwd()));
-}
-
-function resolveModel(requested: string | undefined): string {
-  if (!requested) {
-    return "auto";
-  }
-  const problem = checkModel(fetchModels().models, requested);
-  if (problem) {
-    throw new Error(problem);
-  }
-  return requested;
 }
 
 function formatDuration(job: Job): string {
@@ -79,7 +68,12 @@ function printResult(stateDir: string, job: Job): void {
     console.log(log.result.result);
   } else {
     console.log("Cursor job " + job.id + " failed.");
-    const stderr = fs.readFileSync(files.stderr, "utf8").trim();
+    let stderr = fs.readFileSync(files.stderr, "utf8").trim();
+    // After a rejected --model, cursor-agent lists about 250 model ids. Only the first sentence is useful.
+    const listStart = stderr.indexOf(" Available models:");
+    if (listStart !== -1) {
+      stderr = stderr.slice(0, listStart) + " Run /cursor:models to see the listed models.";
+    }
     if (stderr !== "") {
       console.log(stderr);
     } else if (log.result) {
@@ -188,7 +182,7 @@ async function runTask(argv: string[]): Promise<void> {
     kind: "task",
     summary: task,
     prompt: fillTemplate("task", { TASK: task }),
-    model: resolveModel(values.model),
+    model: values.model ?? "auto",
     readOnly: values["read-only"],
     resumeSessionId: resumeSessionId,
   });
@@ -220,7 +214,7 @@ async function runReview(kind: "review" | "adversarial-review", argv: string[]):
     kind: kind,
     summary: "Review of " + review.target,
     prompt: fillTemplate(kind, { TARGET: review.target, FOCUS: focus, INPUT: review.input }),
-    model: resolveModel(values.model),
+    model: values.model ?? "auto",
     readOnly: true,
     resumeSessionId: null,
   });

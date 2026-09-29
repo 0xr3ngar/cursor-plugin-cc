@@ -19,6 +19,11 @@ if (args[0] === "--version") {
   process.stdout.write(fs.readFileSync(path.join(import.meta.dirname, "fixtures", "models.txt")));
 } else if (args[0] === "-p") {
   const prompt = fs.readFileSync(0, "utf8");
+  const model = args[args.indexOf("--model") + 1];
+  if (model === "no-such-model") {
+    console.error("Cannot use this model: no-such-model. Available models: auto, composer-2.5");
+    process.exit(1);
+  }
   let shellPid = null;
   if (prompt.includes("SLEEP")) {
     shellPid = spawn("sleep", ["60"], { detached: true, stdio: "ignore" }).pid;

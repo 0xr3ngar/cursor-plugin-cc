@@ -19,7 +19,7 @@ Step 1: pick the model.
 - If the request has no `--model`, leave it out. Cursor then uses `auto`.
 - If `--model` names an exact model id, keep it.
 - If the user named a model loosely, such as "use opus" or "the fast codex one", run the companion with `models <words>`, for example `models opus`. If exactly one model matches, use its id. If several match and the request makes the choice clear, use that id. Otherwise return the list of matching models and stop without running the task.
-- Never pass a model id that the `models` output did not list.
+- The `models` list leaves out some models that Cursor accepts. If no listed model matches a loose name, stop and say so, and tell the user they can pass an exact id with `--model`. Never invent an id.
 
 Step 2: run the task with one `Bash` call and a timeout of 600000 ms:
 

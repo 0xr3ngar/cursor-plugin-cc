@@ -81,11 +81,18 @@ test("task --read-only uses ask mode", () => {
   assert.ok(!call.args.includes("--force"));
 });
 
-test("task rejects an unknown model before starting cursor-agent", () => {
-  const result = run(["task", "--model", "codex-high", "fix it"]);
+test("task passes a model id that cursor-agent models does not list", () => {
+  // cursor-agent models leaves out some models that --model accepts, such as glm-5p3-flash.
+  const result = run(["task", "--model", "glm-5p3-flash", "fix it"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(recorded().args.includes("glm-5p3-flash"));
+});
+
+test("task shortens the error for a model that cursor-agent rejects", () => {
+  const result = run(["task", "--model", "no-such-model", "fix it"]);
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /no model named "codex-high"\. Close matches: gpt-5\.3-codex-high/);
-  assert.ok(!fs.existsSync(env.FAKE_CURSOR_RECORD!));
+  assert.match(result.stdout, /Cannot use this model: no-such-model\. Run \/cursor:models to see the listed models\./);
+  assert.doesNotMatch(result.stdout, /Available models/);
 });
 
 test("task --resume continues the last task session", () => {

@@ -52,28 +52,3 @@ export function modelMatches(model: Model, words: string[]): boolean {
   }
   return true;
 }
-
-// Returns an error message, or null when the model exists.
-export function checkModel(models: Model[], requested: string): string | null {
-  // For bracket overrides such as claude-opus-4-8[effort=high], only the part before "[" must match.
-  const id = requested.split("[")[0];
-  for (const model of models) {
-    if (model.id === id) {
-      return null;
-    }
-  }
-
-  const closeMatches: string[] = [];
-  for (const model of models) {
-    if (model.id.includes(id)) {
-      closeMatches.push(model.id);
-    }
-  }
-
-  let message = 'Cursor has no model named "' + id + '".';
-  if (closeMatches.length > 0) {
-    message += " Close matches: " + closeMatches.slice(0, 10).join(", ") + ".";
-  }
-  message += " Run /cursor:models to see every model.";
-  return message;
-}

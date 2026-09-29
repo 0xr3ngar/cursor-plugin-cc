@@ -30,6 +30,7 @@ You need Node 22.6 or later and the Cursor CLI, logged in.
 Useful flags:
 
 - `--model <name>` picks the model. Loose names like "opus" work. The default is `auto`.
+  `cursor-agent models` leaves out some models, such as `glm-5p3-flash`. Pass those as an exact id.
 - `--read-only` stops Cursor from editing files.
 - `--resume` continues the last Cursor task.
 - `--base <branch>` reviews your branch instead of uncommitted changes.
