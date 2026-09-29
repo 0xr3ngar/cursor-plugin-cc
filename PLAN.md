@@ -13,7 +13,7 @@ I checked these against `cursor-agent` version `2026.09.28`.
 | Read-only runs | `--mode ask` or `--mode plan` |
 | Write runs | the default mode plus `--force` and `--trust` |
 | Continue a thread | `--resume <session_id>` |
-| Model choice | `--model <id>` and `--list-models` |
+| Model choice | `--model <id>`, and `cursor-agent models` to list them |
 | Auth check | `cursor-agent status` |
 
 Codex needs a long-lived app-server and a broker process. Cursor needs neither, because each call is a single child process. That removes most of the code in the Codex plugin.
@@ -27,6 +27,7 @@ Commands, all under the `/cursor:` namespace:
 - `/cursor:adversarial-review [--base <ref>] [focus text]` runs the same review with a prompt that challenges design decisions.
 - `/cursor:rescue [--model <id>] [--read-only] [--resume|--fresh] <task>` delegates a task through the `cursor:cursor-rescue` subagent.
 - `/cursor:status`, `/cursor:result [job]` and `/cursor:cancel [job]` manage background jobs.
+- `/cursor:models` lists the model ids the user's Cursor account can use.
 
 The subagent `cursor-rescue` forwards the task to the companion script with one Bash call and returns its output unchanged. It follows the same pattern as `codex-rescue`.
 
@@ -44,10 +45,12 @@ plugins/cursor/
   scripts/
     cursor-companion.mjs   CLI entry point, one subcommand per slash command
     lib/cursor.mjs         builds argv and runs cursor-agent
+    lib/models.mjs         parses `cursor-agent models` output
     lib/jobs.mjs           background job state
     lib/git.mjs            review target and diff
 tests/
   fake-cursor-agent.mjs    stub binary that prints recorded JSON
+  fixtures/models.txt      recorded `cursor-agent models` output
   *.test.mjs
 ```
 
@@ -63,17 +66,45 @@ The code is plain Node (18.18 or later) ESM with no runtime dependencies. Tests 
 
 For a review, the script collects the diff with `git`, puts it into the review prompt, and runs Cursor in `--mode ask`. The Codex plugin can use Codex's built-in review. Cursor doesn't have one, so we build the prompt ourselves.
 
+## Model selection
+
+Claude has no way to know which models a Cursor account can use. The list depends on the plan and team, and it changes often. My account currently shows about 250 ids. So the plugin asks the CLI and parses its answer.
+
+`cursor-agent models` prints a header, one line per model, and a tip at the end:
+
+```
+Available models
+
+auto - Auto (default)
+composer-2.5 - Composer 2.5 (current)
+gpt-5.3-codex-high - Codex 5.3 High
+...
+
+Tip: use --model <id> (or /model <id> in interactive mode) to switch. ...
+```
+
+`lib/models.mjs` keeps only lines that match `^(\S+) - (.+)$`. For each match it returns `{ id, label, isDefault, isCurrent }`, where the two flags come from the ` (default)` and ` (current)` suffixes on the label. The header, blank lines and tip don't match, so they are dropped. `cursor-companion.mjs models --json` prints that list.
+
+The list is used in three places:
+
+1. `/cursor:models` shows the list to the user.
+2. When the user names a model loosely, such as "use opus" or "the fast codex one", the `cursor-rescue` subagent runs `models --json` and picks the matching id. If more than one id matches, it asks the user to choose. It never guesses an id that is not in the list.
+3. Before a run starts, the companion script checks the `--model` value against the list and fails with the closest ids if the value is not there. Some models take a bracket override such as `claude-opus-4-8[effort=high]`. For those, only the part before `[` is checked.
+
+The CLI output is plain text with no stable format, so a Cursor release could change it. Unit tests run the parser against a recorded copy in `tests/fixtures/models.txt`. If parsing finds no models, the script says so and prints the raw output rather than failing silently. The script does not cache the list: fetching it takes about a second, and a cache would go stale when the account changes.
+
 ## Steps
 
 1. Scaffold the marketplace, the plugin manifest and `/cursor:setup`. Verify by running `/plugin marketplace add ./` locally, installing the plugin, and checking that `/cursor:setup` reports the login status.
-2. Add `lib/cursor.mjs` for foreground runs and `/cursor:rescue` with the subagent. Verify with unit tests against the fake binary and one real rescue in a scratch repo.
-3. Add background jobs with `status`, `result` and `cancel`. Verify by starting a long task, polling its status, cancelling it, and confirming the process is gone.
-4. Add `review` and `adversarial-review`. Verify on a scratch repo with a known bug in the diff.
-5. Add resume support. Verify that a second `--resume` call sees the first call's context.
-6. Write the README and add CI that runs `node --test`.
+2. Add `lib/models.mjs` and `/cursor:models`. Verify with parser tests against the fixture and by running `/cursor:models` for real.
+3. Add `lib/cursor.mjs` for foreground runs and `/cursor:rescue` with the subagent, including model lookup and validation. Verify with unit tests against the fake binary, one real rescue in a scratch repo, and one rescue that says "use opus".
+4. Add background jobs with `status`, `result` and `cancel`. Verify by starting a long task, polling its status, cancelling it, and confirming the process is gone.
+5. Add `review` and `adversarial-review`. Verify on a scratch repo with a known bug in the diff.
+6. Add resume support. Verify that a second `--resume` call sees the first call's context.
+7. Write the README and add CI that runs `node --test`.
 
 ## Decisions
 
 - Cursor edits the same checkout that Claude works in. Claude orchestrates and Cursor implements, so a separate worktree would only add a merge step.
-- The default model is `auto`. Every command accepts `--model <id>` and passes it to the CLI unchanged. `/cursor:setup` prints the output of `cursor-agent --list-models`.
+- The default model is `auto`. Every command accepts `--model <id>`, which is checked against the parsed model list (see Model selection).
 - The repo will be public, so the README and code should not assume a specific Cursor team or account.
