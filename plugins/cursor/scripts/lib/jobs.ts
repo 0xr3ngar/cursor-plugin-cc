@@ -4,7 +4,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { buildRunArgs, isRunning, readLog, type RunFiles, type RunOptions, startCursor } from "./cursor.ts";
+import {
+  buildRunArgs,
+  isRunning,
+  readLog,
+  type RunFiles,
+  type RunOptions,
+  startCursor,
+  stopProcessTree,
+} from "./cursor.ts";
 
 export type JobKind = "task" | "review" | "adversarial-review";
 export type JobStatus = "running" | "completed" | "failed" | "cancelled";
@@ -126,12 +134,7 @@ export function cancelJob(stateDir: string, job: Job): void {
   job.status = "cancelled";
   job.finishedAt = new Date().toISOString();
   saveJob(stateDir, job);
-  try {
-    // A negative pid signals the whole process group started by startCursor.
-    process.kill(-job.pid, "SIGTERM");
-  } catch {
-    // The process already exited.
-  }
+  stopProcessTree(job.pid);
 }
 
 // Returns the Cursor session of the newest task in this repository, or null.

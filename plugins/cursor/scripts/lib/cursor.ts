@@ -1,4 +1,4 @@
-import { type ChildProcess, spawn } from "node:child_process";
+import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 
 export const CURSOR_BIN = "cursor-agent";
@@ -53,8 +53,7 @@ export function startCursor(args: string[], files: RunFiles, cwd: string): Child
   const logFd = fs.openSync(files.log, "w");
   const stderrFd = fs.openSync(files.stderr, "w");
 
-  // detached puts cursor-agent in its own process group. Cancel can then stop it together with
-  // the shell commands it started, and it keeps running if this script is stopped by a timeout.
+  // detached keeps cursor-agent running if this script is stopped by a timeout.
   const child = spawn(CURSOR_BIN, args, {
     cwd: cwd,
     detached: true,
@@ -112,6 +111,39 @@ export function readLog(logPath: string): LogSummary {
     }
   }
   return summary;
+}
+
+// cursor-agent starts each shell command in a new process group, so signalling its own group
+// would leave those commands running. This finds every descendant through `ps` and stops each one.
+export function stopProcessTree(pid: number): void {
+  const result = spawnSync("ps", ["-A", "-o", "pid=,ppid="], { encoding: "utf8" });
+  const childrenByParent = new Map<number, number[]>();
+  for (const line of result.stdout.split("\n")) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length !== 2) {
+      continue;
+    }
+    const child = Number(parts[0]);
+    const parent = Number(parts[1]);
+    const children = childrenByParent.get(parent) ?? [];
+    children.push(child);
+    childrenByParent.set(parent, children);
+  }
+
+  // The list grows while it is walked, so it ends up holding the whole tree.
+  const toStop = [pid];
+  for (let i = 0; i < toStop.length; i++) {
+    for (const child of childrenByParent.get(toStop[i]) ?? []) {
+      toStop.push(child);
+    }
+  }
+  for (const target of toStop) {
+    try {
+      process.kill(target, "SIGTERM");
+    } catch {
+      // The process already exited.
+    }
+  }
 }
 
 export function isRunning(pid: number): boolean {

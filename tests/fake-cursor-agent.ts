@@ -1,5 +1,7 @@
 // Stands in for the real cursor-agent in tests. It records what it was called with to the file in
 // FAKE_CURSOR_RECORD. A prompt containing SLEEP keeps it running, and one containing FAIL makes it fail.
+// Like the real cursor-agent, SLEEP starts its shell command in a new process group.
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -17,7 +19,11 @@ if (args[0] === "--version") {
   process.stdout.write(fs.readFileSync(path.join(import.meta.dirname, "fixtures", "models.txt")));
 } else if (args[0] === "-p") {
   const prompt = fs.readFileSync(0, "utf8");
-  fs.writeFileSync(process.env.FAKE_CURSOR_RECORD!, JSON.stringify({ args: args, prompt: prompt }));
+  let shellPid = null;
+  if (prompt.includes("SLEEP")) {
+    shellPid = spawn("sleep", ["60"], { detached: true, stdio: "ignore" }).pid;
+  }
+  fs.writeFileSync(process.env.FAKE_CURSOR_RECORD!, JSON.stringify({ args: args, prompt: prompt, shellPid: shellPid }));
 
   const sessionId = "fake-session-1";
   emit({ type: "system", subtype: "init", session_id: sessionId });

@@ -5,6 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { beforeEach, test } from "node:test";
 
+import { isRunning } from "../plugins/cursor/scripts/lib/cursor.ts";
+
 const companion = path.join(import.meta.dirname, "..", "plugins", "cursor", "scripts", "cursor-companion.ts");
 
 let repo: string;
@@ -147,6 +149,7 @@ test("status, result and cancel manage a running job", async () => {
 
   assert.match(run(["cancel"]).stdout, new RegExp("Cancelled Cursor job " + id));
   assert.equal(await exited, 1);
+  assert.equal(isRunning(recorded().shellPid), false);
   assert.match(run(["status", id]).stdout, /Status: cancelled/);
   assert.match(run(["result", id]).stdout, /was cancelled/);
   assert.match(run(["cancel"]).stdout, /No running Cursor jobs/);
