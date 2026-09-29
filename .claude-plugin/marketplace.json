@@ -1,0 +1,18 @@
+{
+  "name": "cursor-plugin-cc",
+  "owner": {
+    "name": "0xr3ngar"
+  },
+  "metadata": {
+    "description": "Use the Cursor Agent CLI from Claude Code to review code or delegate tasks.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "cursor",
+      "description": "Use the Cursor Agent CLI from Claude Code to review code or delegate tasks.",
+      "version": "0.1.0",
+      "source": "./plugins/cursor"
+    }
+  ]
+}
