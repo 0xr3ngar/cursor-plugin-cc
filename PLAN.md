@@ -14,7 +14,6 @@ I checked these against `cursor-agent` version `2026.09.28`.
 | Write runs | the default mode plus `--force` and `--trust` |
 | Continue a thread | `--resume <session_id>` |
 | Model choice | `--model <id>` and `--list-models` |
-| Isolated edits | `--worktree [name]` and `--worktree-base <ref>` |
 | Auth check | `cursor-agent status` |
 
 Codex needs a long-lived app-server and a broker process. Cursor needs neither, because each call is a single child process. That removes most of the code in the Codex plugin.
@@ -26,7 +25,7 @@ Commands, all under the `/cursor:` namespace:
 - `/cursor:setup` checks that `cursor-agent` is on PATH and logged in. If it isn't, it prints the install or login command.
 - `/cursor:review [--base <ref>] [--wait|--background]` runs a read-only review of the working tree or of the branch diff against a base.
 - `/cursor:adversarial-review [--base <ref>] [focus text]` runs the same review with a prompt that challenges design decisions.
-- `/cursor:rescue [--model <id>] [--read-only] [--worktree] [--resume|--fresh] <task>` delegates a task through the `cursor:cursor-rescue` subagent.
+- `/cursor:rescue [--model <id>] [--read-only] [--resume|--fresh] <task>` delegates a task through the `cursor:cursor-rescue` subagent.
 - `/cursor:status`, `/cursor:result [job]` and `/cursor:cancel [job]` manage background jobs.
 
 The subagent `cursor-rescue` forwards the task to the companion script with one Bash call and returns its output unchanged. It follows the same pattern as `codex-rescue`.
@@ -70,11 +69,11 @@ For a review, the script collects the diff with `git`, puts it into the review p
 2. Add `lib/cursor.mjs` for foreground runs and `/cursor:rescue` with the subagent. Verify with unit tests against the fake binary and one real rescue in a scratch repo.
 3. Add background jobs with `status`, `result` and `cancel`. Verify by starting a long task, polling its status, cancelling it, and confirming the process is gone.
 4. Add `review` and `adversarial-review`. Verify on a scratch repo with a known bug in the diff.
-5. Add resume support and a `--worktree` flag for rescue runs. Verify that a second `--resume` call sees the first call's context.
+5. Add resume support. Verify that a second `--resume` call sees the first call's context.
 6. Write the README and add CI that runs `node --test`.
 
-## Open questions
+## Decisions
 
-- Should write-mode rescue runs use `--worktree` by default? That keeps Cursor out of the checkout Claude is editing, but the user has to merge the changes back.
-- Should the default model be `auto`, or a fixed model such as `composer-2.5`?
-- Should the repo stay private or be made public?
+- Cursor edits the same checkout that Claude works in. Claude orchestrates and Cursor implements, so a separate worktree would only add a merge step.
+- The default model is `auto`. Every command accepts `--model <id>` and passes it to the CLI unchanged. `/cursor:setup` prints the output of `cursor-agent --list-models`.
+- The repo will be public, so the README and code should not assume a specific Cursor team or account.
