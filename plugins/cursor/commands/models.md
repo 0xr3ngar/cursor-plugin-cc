@@ -4,6 +4,6 @@ argument-hint: '[words to filter by]'
 allowed-tools: Bash(node:*)
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" models "$ARGUMENTS"`
+!`node --experimental-strip-types --disable-warning=ExperimentalWarning "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" models "$ARGUMENTS"`
 
 Show the model list above to the user as it is. Pass any of these ids to `--model` in `/cursor:rescue`, `/cursor:review` or `/cursor:adversarial-review`.

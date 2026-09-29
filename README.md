@@ -9,7 +9,7 @@ Based on [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc).
 
 ## Install
 
-You need Node 22.18 or later and the Cursor CLI, logged in.
+You need Node 22.6 or later and the Cursor CLI, logged in.
 
 ```
 /plugin marketplace add 0xr3ngar/cursor-plugin-cc

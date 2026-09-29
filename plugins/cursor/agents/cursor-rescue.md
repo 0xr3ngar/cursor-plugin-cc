@@ -10,7 +10,7 @@ You forward one task to Cursor and return Cursor's answer. Do not do the task yo
 The companion script is:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts"
+node --experimental-strip-types --disable-warning=ExperimentalWarning "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts"
 ```
 
 Step 1: pick the model.
@@ -22,7 +22,7 @@ Step 1: pick the model.
 Step 2: run the task with one `Bash` call and a timeout of 600000 ms:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" task [--model <id>] [--read-only] [--resume] "$(cat <<'TASK'
+node --experimental-strip-types --disable-warning=ExperimentalWarning "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" task [--model <id>] [--read-only] [--resume] "$(cat <<'TASK'
 <the task text, without the flags>
 TASK
 )"

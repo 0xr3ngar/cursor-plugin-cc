@@ -1,3 +1,3 @@
 #!/bin/sh
 # Puts the fake cursor-agent on PATH for the tests.
-exec node "$(dirname "$0")/../fake-cursor-agent.ts" "$@"
+exec node --experimental-strip-types --disable-warning=ExperimentalWarning "$(dirname "$0")/../fake-cursor-agent.ts" "$@"

@@ -7,6 +7,8 @@ import { beforeEach, test } from "node:test";
 
 import { isRunning } from "../plugins/cursor/scripts/lib/cursor.ts";
 
+// The same flags the slash commands use, so the tests run on every Node version the plugin supports.
+const NODE_FLAGS = ["--experimental-strip-types", "--disable-warning=ExperimentalWarning"];
 const companion = path.join(import.meta.dirname, "..", "plugins", "cursor", "scripts", "cursor-companion.ts");
 
 let repo: string;
@@ -37,7 +39,7 @@ function git(args: string[]) {
 }
 
 function run(args: string[]) {
-  return spawnSync("node", [companion, ...args], { cwd: repo, env: env, encoding: "utf8" });
+  return spawnSync("node", [...NODE_FLAGS, companion, ...args], { cwd: repo, env: env, encoding: "utf8" });
 }
 
 function recorded() {
@@ -135,7 +137,7 @@ test("review --base reviews the branch diff", () => {
 });
 
 test("status, result and cancel manage a running job", async () => {
-  const waiting = spawn("node", [companion, "task", "SLEEP"], { cwd: repo, env: env });
+  const waiting = spawn("node", [...NODE_FLAGS, companion, "task", "SLEEP"], { cwd: repo, env: env });
   const exited = new Promise((resolve) => waiting.on("exit", resolve));
 
   let table = "";

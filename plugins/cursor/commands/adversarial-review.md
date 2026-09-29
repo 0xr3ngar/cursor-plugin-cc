@@ -12,7 +12,7 @@ Arguments: `$ARGUMENTS`
 1. Remove `--background` from the arguments if it is there. Keep `--base` and `--model` as they are. Everything else is focus text; pass it as one quoted argument after the flags.
 2. Build the command:
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" adversarial-review [--base <ref>] [--model <id>] "<focus text>"
+   node --experimental-strip-types --disable-warning=ExperimentalWarning "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" adversarial-review [--base <ref>] [--model <id>] "<focus text>"
    ```
 3. If `--background` was given, run it with `Bash` and `run_in_background: true`, then tell the user the review started and that `/cursor:status` shows its progress. Do not wait for it in this turn.
 4. Otherwise run it in the foreground with a timeout of 600000 ms.

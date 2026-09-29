@@ -5,6 +5,6 @@ disable-model-invocation: true
 allowed-tools: Bash(node:*)
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" result "$ARGUMENTS"`
+!`node --experimental-strip-types --disable-warning=ExperimentalWarning "${CLAUDE_PLUGIN_ROOT}/scripts/cursor-companion.ts" result "$ARGUMENTS"`
 
 Show the output above to the user in full. Do not summarize it or drop file paths and line numbers.
