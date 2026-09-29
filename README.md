@@ -2,11 +2,14 @@
 
 Use the Cursor Agent CLI from inside Claude Code. Claude stays the main agent and hands implementation, fixes, investigations and reviews to Cursor as a subagent.
 
-It is modeled on [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc).
+It follows the design of [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc).
+
+> [!WARNING]
+> I built this for my own use, mostly by prompting Claude Code a few times. I tested it on macOS against `cursor-agent` 2026.09.28 and nowhere else. Expect rough edges, and read the code before you trust it with your repository.
 
 ## Requirements
 
-- Node.js 22.18 or later. The plugin is written in TypeScript and Node runs it directly, so there is no build step.
+- Node.js 22.18 or later. Node runs the plugin's TypeScript files directly, so there is no build step.
 - The Cursor Agent CLI (`cursor-agent`), logged in to a Cursor account. Runs count toward that account's usage.
 - macOS or Linux.
 
@@ -56,11 +59,11 @@ Show running and recent jobs, print the final output of a job, or cancel a runni
 
 ## Models
 
-Without `--model`, Cursor uses `auto`. The plugin gets the model list from `cursor-agent models`, because it differs between accounts and changes often. Loose names like "opus" or "the fast codex one" are resolved against that list, and an id that is not in it is rejected before Cursor starts.
+Without `--model`, Cursor uses `auto`. The plugin gets the model list from `cursor-agent models`, because it differs between accounts and changes often. The subagent matches loose names like "opus" or "the fast codex one" against that list. The companion script rejects an id that is not in the list before Cursor starts.
 
 ## How it works
 
-Each command runs `plugins/cursor/scripts/cursor-companion.ts`, which starts `cursor-agent -p --output-format stream-json`. The prompt goes to Cursor on stdin, and Cursor's event stream is written to a log file in the plugin's data directory. Each job is tracked per repository.
+Each command runs `plugins/cursor/scripts/cursor-companion.ts`, which starts `cursor-agent -p --output-format stream-json`. The prompt goes to Cursor on stdin, and Cursor writes its event stream to a log file in the plugin's data directory. The plugin keeps a separate job list for each repository.
 
 Cursor runs as a separate process. If Claude Code's command timeout stops the companion script, Cursor keeps working, and `/cursor:status` and `/cursor:result` still find the job.
 
@@ -73,3 +76,7 @@ npm test
 ```
 
 The tests use a fake `cursor-agent` in `tests/fake-bin`, so they need no Cursor account. To try the plugin from a checkout, start Claude Code with `claude --plugin-dir ./plugins/cursor`.
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
