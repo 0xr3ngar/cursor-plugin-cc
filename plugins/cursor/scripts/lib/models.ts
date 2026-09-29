@@ -55,7 +55,7 @@ export function modelMatches(model: Model, words: string[]): boolean {
 
 // Returns an error message, or null when the model exists.
 export function checkModel(models: Model[], requested: string): string | null {
-  // Bracket overrides such as claude-opus-4-8[effort=high] are checked by the part before "[".
+  // For bracket overrides such as claude-opus-4-8[effort=high], only the part before "[" must match.
   const id = requested.split("[")[0];
   for (const model of models) {
     if (model.id === id) {

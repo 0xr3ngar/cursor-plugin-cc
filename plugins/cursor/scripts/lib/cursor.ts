@@ -47,19 +47,19 @@ export function buildRunArgs(options: RunOptions): string[] {
   return args;
 }
 
-// Starts cursor-agent with the prompt file as stdin and the event stream written to the log file.
+// Starts cursor-agent, which reads the prompt file on stdin and writes its event stream to the log file.
 export function startCursor(args: string[], files: RunFiles, cwd: string): ChildProcess {
   const promptFd = fs.openSync(files.prompt, "r");
   const logFd = fs.openSync(files.log, "w");
   const stderrFd = fs.openSync(files.stderr, "w");
 
-  // detached keeps cursor-agent running if this script is stopped by a timeout.
+  // detached keeps cursor-agent running if a timeout stops this script.
   const child = spawn(CURSOR_BIN, args, {
     cwd: cwd,
     detached: true,
     stdio: [promptFd, logFd, stderrFd],
   });
-  // A missing binary is reported through child.pid being undefined, so the error event is ignored.
+  // When the binary is missing, child.pid is undefined and startJob reports it, so this ignores the error event.
   child.on("error", () => {});
 
   fs.closeSync(promptFd);
@@ -93,7 +93,7 @@ export function readLog(logPath: string): LogSummary {
     try {
       event = JSON.parse(line);
     } catch {
-      // The last line can be half written while cursor-agent is running.
+      // While cursor-agent runs, the last line can be incomplete.
       continue;
     }
 
@@ -130,7 +130,7 @@ export function stopProcessTree(pid: number): void {
     childrenByParent.set(parent, children);
   }
 
-  // The list grows while it is walked, so it ends up holding the whole tree.
+  // The loop appends children while it walks the list, so the list ends up holding the whole tree.
   const toStop = [pid];
   for (let i = 0; i < toStop.length; i++) {
     for (const child of childrenByParent.get(toStop[i]) ?? []) {

@@ -24,7 +24,7 @@ const PROMPTS_DIR = path.join(import.meta.dirname, "..", "prompts");
 function fillTemplate(name: string, values: Record<string, string>): string {
   let text = fs.readFileSync(path.join(PROMPTS_DIR, name + ".md"), "utf8");
   for (const key of Object.keys(values)) {
-    // A replacer function keeps "$&" and similar sequences in a diff from being treated as patterns.
+    // With a replacer function, String.replace copies "$&" and similar sequences in a diff as plain text.
     text = text.replace("{{" + key + "}}", () => values[key]);
   }
   return text;
@@ -94,8 +94,8 @@ function printResult(stateDir: string, job: Job): void {
   console.log("\n" + footer + "]");
 }
 
-// Starts a job and waits for it. The job id is printed first, so it is still known if this script
-// is stopped by a timeout while cursor-agent keeps running.
+// Starts a job and waits for it. It prints the job id first, so the caller still has the id if a
+// timeout stops this script while cursor-agent keeps running.
 async function runJob(details: JobDetails): Promise<void> {
   const repoRoot = findRepoRoot(process.cwd());
   const stateDir = getStateDir(repoRoot);
@@ -141,7 +141,7 @@ function runModels(argv: string[]): void {
     return;
   }
 
-  // The slash command passes its arguments as one string, so the words are split here.
+  // The slash command passes its arguments as one string, so this splits them into words.
   const words: string[] = [];
   for (const word of argv.join(" ").split(" ")) {
     if (word !== "") {

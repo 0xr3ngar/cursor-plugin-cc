@@ -111,8 +111,8 @@ export function startJob(stateDir: string, cwd: string, details: JobDetails): { 
   return { job, child };
 }
 
-// A job can finish while no script is waiting on it, so a running job is checked against its
-// process every time it is read. Once the process is gone, the log decides the final status.
+// A job can finish while no script waits on it, so every read checks a running job against its
+// process. Once the process is gone, the log decides the final status.
 function refreshJob(stateDir: string, job: Job): Job {
   if (job.status !== "running" || isRunning(job.pid)) {
     return job;
@@ -130,7 +130,7 @@ function refreshJob(stateDir: string, job: Job): Job {
 }
 
 export function cancelJob(stateDir: string, job: Job): void {
-  // The status is saved before the kill, so the waiting script sees "cancelled" and not "failed".
+  // This saves the status before stopping the process, so the waiting script sees "cancelled" and not "failed".
   job.status = "cancelled";
   job.finishedAt = new Date().toISOString();
   saveJob(stateDir, job);
